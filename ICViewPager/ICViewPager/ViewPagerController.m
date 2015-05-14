@@ -13,17 +13,19 @@
 #define kContentViewTag 34
 #define IOS_VERSION_7 [[[UIDevice currentDevice] systemVersion] compare:@"7.0" options:NSNumericSearch] != NSOrderedAscending
 
-#define kTabHeight 44.0
-#define kTabOffset 56.0
-#define kTabWidth 128.0
+#define kTabHeight 56.0
+#define kTabOffset 10.0
+#define kTabWidth 90.0
 #define kTabLocation 1.0
 #define kStartFromSecondTab 0.0
 #define kCenterCurrentTab 0.0
 #define kFixFormerTabsPositions 0.0
 #define kFixLatterTabsPositions 0.0
+#define kTabPadding 5.0
+
 
 #define kIndicatorColor [UIColor colorWithRed:178.0/255.0 green:203.0/255.0 blue:57.0/255.0 alpha:0.75]
-#define kTabsViewBackgroundColor [UIColor colorWithRed:234.0/255.0 green:234.0/255.0 blue:234.0/255.0 alpha:0.75]
+#define kTabsViewBackgroundColor [UIColor colorWithWhite:1.0 alpha:1.0]
 #define kContentViewBackgroundColor [UIColor colorWithRed:248.0/255.0 green:248.0/255.0 blue:248.0/255.0 alpha:0.75]
 
 #pragma mark - UIColor+Equality
@@ -69,6 +71,9 @@
     self = [super initWithFrame:frame];
     if (self) {
         self.backgroundColor = [UIColor clearColor];
+        UIView *lineView = [[UIView alloc] initWithFrame:CGRectMake(self.frame.size.width-1, 0, 1.0, self.frame.size.height)];
+        lineView.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.1];
+        [self.layer addSublayer:lineView.layer];
     }
     return self;
 }
@@ -105,10 +110,11 @@
         // Draw the indicator
         [bezierPath moveToPoint:CGPointMake(0.0, CGRectGetHeight(rect) - 1.0)];
         [bezierPath addLineToPoint:CGPointMake(CGRectGetWidth(rect), CGRectGetHeight(rect) - 1.0)];
-        [bezierPath setLineWidth:5.0];
+        [bezierPath setLineWidth:3.0];
         [self.indicatorColor setStroke];
         [bezierPath stroke];
     }
+    
 }
 @end
 
@@ -180,50 +186,28 @@
 #pragma mark - View life cycle
 - (void)viewDidLoad {
     [super viewDidLoad];
+    // self.edgesForExtendedLayout = UIRectEdgeNone;
 }
 - (void)viewWillAppear:(BOOL)animated {
     
     [super viewWillAppear:animated];
-    
     // Do setup if it's not done yet
     if (![self isDefaultSetupDone]) {
         [self defaultSetup];
     }
-}
-- (void)viewWillLayoutSubviews {
     
-    // Re-layout sub views
-    [self layoutSubviews];
+    [self.contentView setNeedsLayout];
+}
+
+-(void)viewDidLayoutSubviews {
+    [self.view layoutIfNeeded];
 }
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
 }
 
-- (void)layoutSubviews {
-    
-    CGFloat topLayoutGuide = 0.0;
-    if (IOS_VERSION_7) {
-        topLayoutGuide = 20.0;
-        if (self.navigationController && !self.navigationController.navigationBarHidden) {
-            topLayoutGuide += self.navigationController.navigationBar.frame.size.height;
-        }
-    }
-    
-    CGRect frame = self.tabsView.frame;
-    frame.origin.x = 0.0;
-    frame.origin.y = [self.tabLocation boolValue] ? topLayoutGuide : CGRectGetHeight(self.view.frame) - [self.tabHeight floatValue];
-    frame.size.width = CGRectGetWidth(self.view.frame);
-    frame.size.height = [self.tabHeight floatValue];
-    self.tabsView.frame = frame;
-    
-    frame = self.contentView.frame;
-    frame.origin.x = 0.0;
-    frame.origin.y = [self.tabLocation boolValue] ? topLayoutGuide + CGRectGetHeight(self.tabsView.frame) : topLayoutGuide;
-    frame.size.width = CGRectGetWidth(self.view.frame);
-    frame.size.height = CGRectGetHeight(self.view.frame) - (topLayoutGuide + CGRectGetHeight(self.tabsView.frame)) - CGRectGetHeight(self.tabBarController.tabBar.frame);
-    self.contentView.frame = frame;
-}
+
 
 #pragma mark - IBAction
 - (IBAction)handleTapGesture:(id)sender {
@@ -240,15 +224,6 @@
     }
 }
 
-#pragma mark - Interface rotation
-- (void)didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation {
-    
-    // Re-layout sub views
-    [self layoutSubviews];
-    
-    // Re-align tabs if needed
-    self.activeTabIndex = self.activeTabIndex;
-}
 
 #pragma mark - Setters
 - (void)setTabHeight:(NSNumber *)tabHeight {
@@ -485,6 +460,7 @@
     }
     return _startFromSecondTab;
 }
+
 - (NSNumber *)centerCurrentTab {
     
     if (!_centerCurrentTab) {
@@ -570,6 +546,8 @@
     _tabsViewBackgroundColor = nil;
     _contentViewBackgroundColor = nil;
     
+    [self setNeedsReloadOptions];
+    
     // Call to setup again with the updated data
     [self defaultSetup];
 }
@@ -628,9 +606,10 @@
         UIView *tabView = [self tabViewAtIndex:i];
         
         CGRect frame = tabView.frame;
-        frame.origin.x = contentSizeWidth;
-        frame.size.width = [self.tabWidth floatValue];
+        frame.origin.x = CGRectGetMinX(tabView.frame);
+        frame.size.width = CGRectGetWidth(tabView.bounds);
         tabView.frame = frame;
+        tabView.backgroundColor = [UIColor whiteColor];
         
         contentSizeWidth += CGRectGetWidth(tabView.frame);
     }
@@ -740,6 +719,14 @@
 }
 
 #pragma mark - Private methods
+
+- (void)updateViewConstraints {
+    
+    [super updateViewConstraints];
+    
+}
+
+
 - (void)defaultSettings {
     
     // pageViewController
@@ -791,12 +778,12 @@
     if (!self.tabsView) {
         
         self.tabsView = [[UIScrollView alloc] initWithFrame:CGRectMake(0.0, 0.0, CGRectGetWidth(self.view.frame), [self.tabHeight floatValue])];
-        self.tabsView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
         self.tabsView.backgroundColor = self.tabsViewBackgroundColor;
         self.tabsView.scrollsToTop = NO;
         self.tabsView.showsHorizontalScrollIndicator = NO;
         self.tabsView.showsVerticalScrollIndicator = NO;
         self.tabsView.tag = kTabViewTag;
+        self.tabsView.translatesAutoresizingMaskIntoConstraints = NO;
         
         [self.view insertSubview:self.tabsView atIndex:0];
     }
@@ -821,8 +808,9 @@
         
         CGRect frame = tabView.frame;
         frame.origin.x = contentSizeWidth;
-        frame.size.width = [self.tabWidth floatValue];
+        frame.size.width = CGRectGetWidth(tabView.bounds);
         tabView.frame = frame;
+        tabView.backgroundColor = [UIColor whiteColor];
         
         [self.tabsView addSubview:tabView];
         
@@ -852,17 +840,29 @@
     if (!self.contentView) {
         
         self.contentView = self.pageViewController.view;
-        self.contentView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
         self.contentView.backgroundColor = self.contentViewBackgroundColor;
-        self.contentView.bounds = self.view.bounds;
+        //self.contentView.frame = CGRectMake(self.view.bounds.origin.x, self.view.bounds.origin.y+self.tabHeight.floatValue, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.frame));
         self.contentView.tag = kContentViewTag;
-        
+        self.contentView.translatesAutoresizingMaskIntoConstraints = NO;
+        [self.pageViewController willMoveToParentViewController:self];
         [self.view insertSubview:self.contentView atIndex:0];
+        [self.pageViewController didMoveToParentViewController:self];
     }
     
     // Select starting tab
-    NSUInteger index = [self.startFromSecondTab boolValue] ? 1 : 0;
-    [self selectTabAtIndex:index];
+    // NSUInteger index = [self.startFromSecondTab boolValue] ? 1 : 0;
+    // haber7 hack
+    [self selectTabAtIndex:2];
+    
+    NSDictionary *views = @{@"contentView": self.contentView, @"tabsView": self.tabsView};
+    
+    NSMutableArray *constraints = [NSMutableArray array];
+    
+    [constraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-0-[tabsView(44)]-0-[contentView]-0-|" options:0 metrics:nil views:views]];
+    [constraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[contentView]-0-|" options:0 metrics:nil views:views]];
+    [constraints addObjectsFromArray:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-0-[tabsView]-0-|" options:0 metrics:nil views:views]];
+    
+    [self.view addConstraints:constraints];
     
     // Set setup done
     self.defaultSetupDone = YES;
@@ -878,10 +878,10 @@
 
         // Get view from dataSource
         UIView *tabViewContent = [self.dataSource viewPager:self viewForTabAtIndex:index];
-        tabViewContent.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
         
         // Create TabView and subview the content
-        TabView *tabView = [[TabView alloc] initWithFrame:CGRectMake(0.0, 0.0, [self.tabWidth floatValue], [self.tabHeight floatValue])];
+        TabView *tabView = [[TabView alloc] initWithFrame:CGRectMake(0.0, 0.0, CGRectGetWidth(tabViewContent.bounds), [self.tabHeight floatValue])];
+        
         [tabView addSubview:tabViewContent];
         [tabView setClipsToBounds:YES];
         [tabView setIndicatorColor:self.indicatorColor];
@@ -1060,6 +1060,20 @@
 - (void)scrollViewDidEndScrollingAnimation:(UIScrollView *)scrollView {
     if ([self.actualDelegate respondsToSelector:@selector(scrollViewDidEndScrollingAnimation:)]) {
         [self.actualDelegate scrollViewDidEndScrollingAnimation:scrollView];
+    }
+}
+
+-(void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation duration:(NSTimeInterval)duration {
+    [self.view layoutIfNeeded];
+//    [self defaultSetup];
+    [self.contentView setNeedsLayout];
+}
+
+-(NSUInteger)supportedInterfaceOrientations {
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        return UIInterfaceOrientationMaskAllButUpsideDown;
+    } else {
+        return UIInterfaceOrientationMaskPortrait;
     }
 }
 
