@@ -119,10 +119,10 @@
 @end
 
 #pragma mark - ViewPagerController
-@interface ViewPagerController () <UIPageViewControllerDataSource, UIPageViewControllerDelegate, UIScrollViewDelegate>
+@interface ViewPagerController () <UIPageViewControllerDataSource, UIPageViewControllerDelegate, UIScrollViewDelegate, UICollectionViewDataSource, UICollectionViewDelegate>
 
 // Tab and content stuff
-@property UIScrollView *tabsView;
+@property UICollectionView *tabsView;
 @property UIView *contentView;
 
 @property UIPageViewController *pageViewController;
@@ -291,44 +291,44 @@
 
 - (void)setActiveTabIndex:(NSUInteger)activeTabIndex {
     
-    TabView *activeTabView;
+//    TabView *activeTabView;
+//    
+//    // Set to-be-inactive tab unselected
+//    activeTabView = [self tabViewAtIndex:self.activeTabIndex];
+//    activeTabView.selected = NO;
+//    
+//    // Set to-be-active tab selected
+//    activeTabView = [self tabViewAtIndex:activeTabIndex];
+//    activeTabView.selected = YES;
+//    
+//    // Set current activeTabIndex
+//    _activeTabIndex = activeTabIndex;
+//    
+//    // Bring tab to active position
+//    // Position the tab in center if centerCurrentTab option is provided as YES
+//    UIView *tabView = [self tabViewAtIndex:self.activeTabIndex];
+//    CGRect frame = tabView.frame;
+//    
+//    if ([self.centerCurrentTab boolValue]) {
+//        
+//        frame.origin.x += (CGRectGetWidth(frame) / 2);
+//        frame.origin.x -= CGRectGetWidth(self.tabsView.frame) / 2;
+//        frame.size.width = CGRectGetWidth(self.tabsView.frame);
+//        
+//        if (frame.origin.x < 0) {
+//            frame.origin.x = 0;
+//        }
+//        
+//        if ((frame.origin.x + CGRectGetWidth(frame)) > self.tabsView.contentSize.width) {
+//            frame.origin.x = (self.tabsView.contentSize.width - CGRectGetWidth(self.tabsView.frame));
+//        }
+//    } else {
+//        
+//        frame.origin.x -= [self.tabOffset floatValue];
+//        frame.size.width = CGRectGetWidth(self.tabsView.frame);
+//    }
     
-    // Set to-be-inactive tab unselected
-    activeTabView = [self tabViewAtIndex:self.activeTabIndex];
-    activeTabView.selected = NO;
-    
-    // Set to-be-active tab selected
-    activeTabView = [self tabViewAtIndex:activeTabIndex];
-    activeTabView.selected = YES;
-    
-    // Set current activeTabIndex
-    _activeTabIndex = activeTabIndex;
-    
-    // Bring tab to active position
-    // Position the tab in center if centerCurrentTab option is provided as YES
-    UIView *tabView = [self tabViewAtIndex:self.activeTabIndex];
-    CGRect frame = tabView.frame;
-    
-    if ([self.centerCurrentTab boolValue]) {
-        
-        frame.origin.x += (CGRectGetWidth(frame) / 2);
-        frame.origin.x -= CGRectGetWidth(self.tabsView.frame) / 2;
-        frame.size.width = CGRectGetWidth(self.tabsView.frame);
-        
-        if (frame.origin.x < 0) {
-            frame.origin.x = 0;
-        }
-        
-        if ((frame.origin.x + CGRectGetWidth(frame)) > self.tabsView.contentSize.width) {
-            frame.origin.x = (self.tabsView.contentSize.width - CGRectGetWidth(self.tabsView.frame));
-        }
-    } else {
-        
-        frame.origin.x -= [self.tabOffset floatValue];
-        frame.size.width = CGRectGetWidth(self.tabsView.frame);
-    }
-    
-    [self.tabsView scrollRectToVisible:frame animated:YES];
+    [self.tabsView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:activeTabIndex inSection:0] atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:YES];
 }
 - (void)setActiveContentIndex:(NSUInteger)activeContentIndex {
     
@@ -773,11 +773,14 @@
     }
     
     // Add tabsView
-    self.tabsView = (UIScrollView *)[self.view viewWithTag:kTabViewTag];
+    self.tabsView = (UICollectionView *)[self.view viewWithTag:kTabViewTag];
     
     if (!self.tabsView) {
-        
-        self.tabsView = [[UIScrollView alloc] initWithFrame:CGRectMake(0.0, 0.0, CGRectGetWidth(self.view.frame), [self.tabHeight floatValue])];
+        UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
+        layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
+        self.tabsView = [[UICollectionView alloc] initWithFrame:CGRectMake(0.0, 0.0, CGRectGetWidth(self.view.frame), [self.tabHeight floatValue]) collectionViewLayout:layout];
+        self.tabsView.delegate = self;
+        self.tabsView.dataSource = self;
         self.tabsView.backgroundColor = self.tabsViewBackgroundColor;
         self.tabsView.scrollsToTop = NO;
         self.tabsView.showsHorizontalScrollIndicator = NO;
@@ -802,37 +805,37 @@
         }
     }
     
-    for (NSUInteger i = 0; i < self.tabCount; i++) {
-        
-        UIView *tabView = [self tabViewAtIndex:i];
-        
-        CGRect frame = tabView.frame;
-        frame.origin.x = contentSizeWidth;
-        frame.size.width = CGRectGetWidth(tabView.bounds);
-        tabView.frame = frame;
-        tabView.backgroundColor = [UIColor whiteColor];
-        
-        [self.tabsView addSubview:tabView];
-        
-        contentSizeWidth += CGRectGetWidth(tabView.frame);
-        
-        // To capture tap events
-        UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
-        [tabView addGestureRecognizer:tapGestureRecognizer];
-    }
+//    for (NSUInteger i = 0; i < self.tabCount; i++) {
+//        
+//        UIView *tabView = [self tabViewAtIndex:i];
+//        
+//        CGRect frame = tabView.frame;
+//        frame.origin.x = contentSizeWidth;
+//        frame.size.width = CGRectGetWidth(tabView.bounds);
+//        tabView.frame = frame;
+//        tabView.backgroundColor = [UIColor whiteColor];
+//        
+//        [self.tabsView addSubview:tabView];
+//        
+//        contentSizeWidth += CGRectGetWidth(tabView.frame);
+//        
+//        // To capture tap events
+//        UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTapGesture:)];
+//        [tabView addGestureRecognizer:tapGestureRecognizer];
+//    }
     
-    // Extend contentSizeWidth if fixLatterTabsPositions is provided YES
-    if ([self.fixLatterTabsPositions boolValue]) {
-        
-        // And if the centerCurrentTab is provided as YES fine tune the content size according to it
-        if ([self.centerCurrentTab boolValue]) {
-            contentSizeWidth += (CGRectGetWidth(self.tabsView.frame) - [self.tabWidth floatValue]) / 2.0;
-        } else {
-            contentSizeWidth += CGRectGetWidth(self.tabsView.frame) - [self.tabWidth floatValue] - [self.tabOffset floatValue];
-        }
-    }
+//    // Extend contentSizeWidth if fixLatterTabsPositions is provided YES
+//    if ([self.fixLatterTabsPositions boolValue]) {
+//        
+//        // And if the centerCurrentTab is provided as YES fine tune the content size according to it
+//        if ([self.centerCurrentTab boolValue]) {
+//            contentSizeWidth += (CGRectGetWidth(self.tabsView.frame) - [self.tabWidth floatValue]) / 2.0;
+//        } else {
+//            contentSizeWidth += CGRectGetWidth(self.tabsView.frame) - [self.tabWidth floatValue] - [self.tabOffset floatValue];
+//        }
+//    }
     
-    self.tabsView.contentSize = CGSizeMake(contentSizeWidth, [self.tabHeight floatValue]);
+//    self.tabsView.contentSize = CGSizeMake(contentSizeWidth, [self.tabHeight floatValue]);
     
     // Add contentView
     self.contentView = [self.view viewWithTag:kContentViewTag];
@@ -852,7 +855,7 @@
     // Select starting tab
     // NSUInteger index = [self.startFromSecondTab boolValue] ? 1 : 0;
     // haber7 hack
-    [self selectTabAtIndex:2];
+    //[self selectTabAtIndex:2];
     
     NSDictionary *views = @{@"contentView": self.contentView, @"tabsView": self.tabsView};
     
@@ -866,6 +869,20 @@
     
     // Set setup done
     self.defaultSetupDone = YES;
+}
+
+-(NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
+    return [self.dataSource numberOfTabsForViewPager:self];
+}
+
+-(UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
+    
+    UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"Cell" forIndexPath:indexPath];
+    
+    UIView *view = [self tabViewAtIndex:indexPath.row];
+    [cell addSubview:view];
+    
+    return cell;
 }
 
 - (TabView *)tabViewAtIndex:(NSUInteger)index {
