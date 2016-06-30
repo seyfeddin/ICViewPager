@@ -740,6 +740,7 @@
 
     // Select starting tab
     NSUInteger index = [self.startFromSecondTab boolValue] ? 1 : 0;
+    [self setActiveTabIndex:index];
 
     if (_verticalConstraintsArray) {
         [self.view removeConstraints:_verticalConstraintsArray];
